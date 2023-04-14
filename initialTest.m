@@ -3,18 +3,18 @@ x2all = load('class_2', '-ascii');
 x3all = load('class_3', '-ascii');
 
 x1test = [x1all(1:30,:)];
-x2test = [x1all(1:30,:)];
-x3test = [x1all(1:30,:)];
+x2test = [x2all(1:30,:)];
+x3test = [x3all(1:30,:)];
 xtest = [x1test; x2test; x3test];
 
 C = 3;
 
 [Ntot,dimx] = size(xtest);
  
-alpha = 0.1;
+alpha = 0.01;
  
 W = ones(C,dimx+1);
-    
+
 tk1 = 0.1666;
 tk2 = 0.5;
 tk3 = 0.833;
@@ -25,11 +25,11 @@ for m = 1:3000
     MSE = 0;
     for k = 1:90
         switch k
-            case k<31
+            case k<=30
                 tk = [1;0;0];
-            case 30 < k & k < 61
+            case (31 <= k) & (k <= 60)
                 tk = [0;1;0];
-            case 61 < k
+            case 60 <= k
                 tk = [0; 0;1];
         end
         xk = [xtest(k,:)'; 1];
@@ -45,12 +45,11 @@ for m = 1:3000
     disp(MSE)
 end
 
-    disp(W);
 function gk = sigmoid(zk)
     nz = length(zk);
     gk = zeros(nz, 1);
     for i = 1:nz
-        gk(i)  = 1/(1 + exp(zk(i)));
+        gk(i)  = 1/(1 + exp(-zk(i)));
     end
 end
     
