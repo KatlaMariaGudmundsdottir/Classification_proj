@@ -1,25 +1,27 @@
-function [W,MSE] = trainingLinearClassifier(trainingSet, numberOfClasses, alpha, iterations, varargin)
+function [W,MSE] = trainingLinearClassifier(trainingSet, t, alpha, max_iterations, initalValue)
     [Ntot,dimx] = size(trainingSet);    
-    C = numberOfClasses;
+    [C,~] = size(t);
+    W = ones(C,dimx+1);
+    N = 500000;
+    tol = 1e-7;
+
     if nargin == 5
-        W = varargin{1};
-    else 
-        W = ones(C,dimx+1);
+        W = initalValue;
+        N = max_iterations;
+    elseif nargin == 4
+        N = max_iterations;
     end
 %     imagesPerClass = Ntot/C;
 %     tk = eye(C);
 %     tkAll = 
-    for m = 1:iterations
+    n = 1;
+    MSE_prev = inf;
+    iterate = true;
+    while iterate
         MSE_dW = zeros(size(W));
         MSE = 0;
         for k = 1:Ntot
-            if (k < 31) 
-                tk = [1;0;0];
-            elseif (k > 30 && k < 61)
-                tk = [0;1;0];
-            elseif (k > 60 && k < 91)
-                tk = [0;0;1];
-            end
+            tk = t(:,k);
             xk = [trainingSet(k,:)'; 1];
             zk = W*xk;
             gk = sigmoid(zk);
@@ -30,7 +32,13 @@ function [W,MSE] = trainingLinearClassifier(trainingSet, numberOfClasses, alpha,
             MSE = MSE + 1/2*((gk-tk)')*(gk-tk);
         end 
         W = W - alpha*MSE_dW;
-        disp(MSE)
+        n = n+1;
+        diff = abs(MSE - MSE_prev);
+        MSE_prev = MSE;
+        iterate = diff > tol && n <= N;
     end
+    diff
+    MSE
+    n
 end
 
