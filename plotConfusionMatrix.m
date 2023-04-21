@@ -23,5 +23,10 @@ function fig = plotConfusionMatrix(C, titleString)
     xticks(1:size(C,1)); % Set the x ticks to show whole numbers
     yticks(1:size(C,2)); % Set the y ticks to show whole numbers
     set(gca,'FontSize',14); % Increase font size of the axes labels
+
+    %saveas(gcf, 'confusion_matrix.png'); can perhaps use gcf to return
+    %matrix if I want to plot 2 side by side
+    %also add MSE, error_rate to plot?
 end
+
 
