@@ -59,19 +59,24 @@ trainingPerClass = 30;
 testPerClass = dataPerClass-trainingPerClass;
 
 testSet = zeros(testPerClass*classes,features);
+testLabels = zeros(1,testPerClass*classes);
 trainingSet = zeros(trainingPerClass*classes,features);
+trainingLabels = zeros(1,trainingPerClass*classes);
 for i = 1:classes
     index1 = trainingPerClass+dataPerClass*(i-1)+1;
     index2 = dataPerClass*i;
     tempTest = vowdatanohead(index1:index2,2:16);
     testSet(1+testPerClass*(i-1):testPerClass*i, 1:features) = table2array(tempTest);
+    testLabels(1+testPerClass*(i-1):testPerClass*i) = i.*ones(testPerClass, 1);
 
     index1 = 1+dataPerClass*(i-1);
     index2 = trainingPerClass + dataPerClass*(i-1);
     tempTraining = vowdatanohead(index1:index2,2:16);
-    trainingSet(1+trainingPerClass*(i-1):trainingPerClass*i, 1:features) = table2array(tempTraining) ;
+    trainingSet(1+trainingPerClass*(i-1):trainingPerClass*i, 1:features) = table2array(tempTraining);
+    trainingLabels(1+trainingPerClass*(i-1):trainingPerClass*i) = i.*ones(trainingPerClass, 1);
 end 
 
+covdef = zeros(12,1);
 
 columnMeans = zeros(classes,features);
 covMatrcies = zeros(classes*features,features);
@@ -82,17 +87,47 @@ for i = 1:classes
     columnMeans(i,:) = mean(res,1);
     tempCovMatrix = cov(res);
     covMatrcies(1+features*(i-1):features*i,:) = tempCovMatrix;
+    covdef(i) = isPositiveDefinite(tempCovMatrix);
 end
 
 
-predictedClasses = zeros(1, length(trainingSet));
-for k =  1:length(trainingSet)
-    xk = trainingSet(k,:);
+predictedClasses = zeros(1, length(testSet));
+for k =  1:length(testSet)
+    xk = testSet(k,:);
     pdf_k = zeros(1,classes);
     for C = 1:classes 
-        pdf_k(C) = mvnpdf(xk,columnMeans(classes,:), covMatrcies(1+features*(C-1):features*C,:));
+        pdf_k(C) = mvnpdf(xk,columnMeans(C,:), covMatrcies(1+features*(C-1):features*C,:));
     end
-    predictedClasses(k) = find(pdf_k==max(pdf_k));
+    [~, predictedClasses(k)] = max(pdf_k);
+end
+
+%% Plotting Confusion Matrix
+confmat = confusionmat(testLabels, predictedClasses);
+plotConfusionMatrix(confmat, 'Confusion Matrix for traing set')
+
+
+
+%% Utility functions
+function is_pos_def = isPositiveDefinite(A)
+% This function checks if a matrix A is positive definite
+% Inputs: A - matrix to check
+% Outputs: is_pos_def - true if A is positive definite, false otherwise
+
+% Check if A is square
+if size(A,1) ~= size(A,2)
+    error('Input matrix A must be square.');
+end
+
+% Check if A is symmetric
+if ~isequal(A,A')
+    error('Input matrix A must be symmetric.');
+end
+
+% Compute the eigenvalues of A
+eig_vals = eig(A);
+
+% Check if all eigenvalues are positive
+is_pos_def = all(eig_vals > 0);
 end
 
 % mvnpdf(138,2:16, )
