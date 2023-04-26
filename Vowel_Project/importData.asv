@@ -33,10 +33,10 @@ dataPerClass = 139;
 trainingPerClass = 70;
 testPerClass = dataPerClass-trainingPerClass;
 
-numMen = 45; trainNumMen = 23; testNumMen = 22;
+numMen = 45; trainNumMen = 22; testNumMen = 23;
 numWomen = 48; trainNumWomen = 24; testNumWomen = 24;
 numBoys = 27; trainNumBoys = 14; testNumBoys = 13;
-numGirls = 19; trainNumGirls = 9; testNumGirls = 10;
+numGirls = 19; trainNumGirls = 10; testNumGirls = 9;
 
 testSet = zeros(testPerClass*classes,features);
 testLabels = zeros(1,testPerClass*classes);
@@ -71,21 +71,19 @@ testGirlsIndex2 = testGirlsIndex1 + testNumGirls-1;
 
 for i = 1:classes
     % Training data
-    menTrainData = reshape(data(1:trainMenIndex2, i, :), [trainNumMen, 16]);
-    womenTrainData = reshape(data(trainWomenIndex1:trainWomenIndex2, i, :), [trainNumWomen, 16]);
-    boysTrainData = reshape(data(trainBoysIndex1:trainBoysIndex2, i, :), [trainNumBoys, 16]);
-    girlsTrainData = reshape(data(trainGirlsIndex1:trainGirlsIndex2, i, :), [trainNumGirls, 16]);
-    temptest = [menTrainData; womenTrainData; boysTrainData; girlsTrainData];
-    temptest2 = trainSet(1+trainingPerClass*(i-1):trainingPerClass*i, :);
+    menTrainData = reshape(data(1:trainMenIndex2, i, :), [trainNumMen, features]);
+    womenTrainData = reshape(data(trainWomenIndex1:trainWomenIndex2, i, :), [trainNumWomen, features]);
+    boysTrainData = reshape(data(trainBoysIndex1:trainBoysIndex2, i, :), [trainNumBoys, features]);
+    girlsTrainData = reshape(data(trainGirlsIndex1:trainGirlsIndex2, i, :), [trainNumGirls, features]);
     trainSet(1+trainingPerClass*(i-1):trainingPerClass*i, :) = [menTrainData; womenTrainData; boysTrainData; girlsTrainData];
     trainLabels(1+trainingPerClass*(i-1):trainingPerClass*i) = i.*ones(trainingPerClass, 1);
     
     
     % Testing data
-    menTestData = reshape(data(testMenIndex1:testMenIndex2, i, :), [testNumMen, 16]);
-    womenTestData = reshape(data(testWomenIndex1:testWomenIndex2, i, :), [testNumWomen, 16]);
-    boysTestData = reshape(data(testBoysIndex1:testBoysIndex2, i, :), [testNumBoys, 16]);
-    girlsTestData = reshape(data(testGirlsIndex1:testGirlsIndex2, i, :), [testNumGirls, 16]);
+    menTestData = reshape(data(testMenIndex1:testMenIndex2, i, :), [testNumMen, features]);
+    womenTestData = reshape(data(testWomenIndex1:testWomenIndex2, i, :), [testNumWomen, features]);
+    boysTestData = reshape(data(testBoysIndex1:testBoysIndex2, i, :), [testNumBoys, features]);
+    girlsTestData = reshape(data(testGirlsIndex1:testGirlsIndex2, i, :), [testNumGirls, features]);
     testSet(1+testPerClass*(i-1):testPerClass*i, :) = [menTestData; womenTestData; boysTestData; girlsTestData];
     testLabels(1+testPerClass*(i-1):testPerClass*i) = i.*ones(testPerClass, 1);
 end 
@@ -106,9 +104,9 @@ for i = 1:classes
 end
 
 %% Classification
-predictedClasses = zeros(1, length(testSet));
-for k =  1:length(testSet)
-    xk = testSet(k,:);
+predictedClasses = zeros(1, length(trainSet));
+for k =  1:length(trainSet)
+    xk = trainSet(k,:);
     pdf_k = zeros(1,classes);
     for C = 1:classes 
         pdf_k(C) = mvnpdf(xk,columnMeans(C,:), covMatrcies(1+features*(C-1):features*C,:));
@@ -117,7 +115,7 @@ for k =  1:length(testSet)
 end
 
 %% Plotting Confusion Matrix
-confmat = confusionmat(testLabels, predictedClasses);
+confmat = confusionmat(trainLabels, predictedClasses);
 plotConfusionMatrix(confmat, 'Confusion Matrix for traing set')
 
 

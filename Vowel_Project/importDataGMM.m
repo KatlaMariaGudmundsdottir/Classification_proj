@@ -82,8 +82,7 @@ for i = 1:classes
     index1 = 1 + trainingPerClass*(i-1);
     index2 = trainingPerClass*i;
     res = trainingSet(index1:index2,:);
-    options = statset('SharedCovariance', true);
-    GMModels{i} = fitgmdist(res,2,'Options', options); % store GMM object in cell array
+    GMModels{i} = fitgmdist(res,2); % store GMM object in cell array
 end
 
 

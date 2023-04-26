@@ -7,17 +7,14 @@ filename = fullfile(currentFolder, 'vowdata_nohead.dat');
 % Format for each line of text:
 formatSpec = '%5s%4f%4f%5f%5f%5f%5f%5f%5f%5f%5f%5f%5f%5f%5f%5f%[^\n\r]';
 
-% Open the text file.
 fileID = fopen(filename,'r');
 
 % Read columns of data according to the format.
-% This call is based on the structure of the file used to generate this code. If an error occurs for a different file, try regenerating the code from the Import Tool.
 dataArray = textscan(fileID, formatSpec, 'Delimiter', '', 'WhiteSpace', '', 'TextType', 'string',  'ReturnOnError', false);
 
 % Remove white space around all cell columns.
 dataArray{1} = strtrim(dataArray{1});
 
-% Close the text file.
 fclose(fileID);
 
 % Create output variable
@@ -25,6 +22,7 @@ vowdatanohead = table(dataArray{1:end-1}, 'VariableNames', {'identifier','durati
 
 % Clear temporary variables
 clearvars filename formatSpec fileID dataArray ans;
+
 
 %% Classification variables
 classes = 12;
@@ -69,6 +67,7 @@ testWomenIndex2 = testWomenIndex1 + testNumWomen-1;
 testBoysIndex2 = testBoysIndex1 + testNumBoys-1;
 testGirlsIndex2 = testGirlsIndex1 + testNumGirls-1;
 
+% loop for making test and train array
 for i = 1:classes
     % Training data
     menTrainData = reshape(data(1:trainMenIndex2, i, :), [trainNumMen, features]);
@@ -89,30 +88,26 @@ for i = 1:classes
 end 
 
 
-%% Training
-covdef = zeros(12,1);
-columnMeans = zeros(classes,features);
-covMatrcies = zeros(classes*features,features);
+%% GMM Training
+GMModels = cell(1,classes); % initialize cell array
 for i = 1:classes
-    index1 = 1+trainingPerClass*(i-1);
-    index2 = trainingPerClass*(i);
+    index1 = 1 + trainingPerClass*(i-1);
+    index2 = trainingPerClass*i;
     res = trainSet(index1:index2,:);
-    columnMeans(i,:) = mean(res,1);
-    tempCovMatrix = cov(res);
-    covMatrcies(1+features*(i-1):features*i,:) = tempCovMatrix;
-    covdef(i) = isPositiveDefinite(tempCovMatrix);
+    GMModels{i} = fitgmdist(res,2, 'CovarianceType', 'diagonal'); % store GMM object in cell array
 end
 
+
 %% Classification
-predictedClasses = zeros(1, length(trainSet));
-for k =  1:length(trainSet)
-    xk = trainSet(k,:);
-    pdf_k = zeros(1,classes);
-    for C = 1:classes 
-        pdf_k(C) = mvnpdf(xk,columnMeans(C,:), covMatrcies(1+features*(C-1):features*C,:));
+predictedClasses = zeros(1, length(testSet));
+for C = 1:12
+    pdfVals = zeros(size(testset,1), GMModels{C}.NumComponents);
+    for i = 1:GMModels{C}.NumComponents
+        pdfVals(:, i) = mvnpdf(testset, GMModels{C}.mu(i, :), GMModels{C}.Sigma(:, :, i));
     end
-    [~, predictedClasses(k)] = max(pdf_k);
+    [~, predictedClasses(1+testPerClass*(C-1):testPerClass*C)] = max(pdfVals, [], 2);
 end
+
 
 %% Plotting Confusion Matrix
 confmat = confusionmat(trainLabels, predictedClasses);
@@ -152,4 +147,3 @@ is_pos_def = all(eig_vals > 0);
 end
 
 % mvnpdf(138,2:16, )
-
