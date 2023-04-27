@@ -6,6 +6,7 @@ x3all = load('class_3', '-ascii');
 
 traininSet = 21:50;
 testSet = 1:20;
+features = ["l.sepals", "w.sepals", "l.petals", "w.petals"];
 
 
 
@@ -48,5 +49,7 @@ errorRateTestSet = calculateErrorRate(confmat_test, length(testSet));
 test_fig = plotConfusionMatrix(confmat_test, 'Confusion Matrix Training Set');
 filename_test = 'confmat_training_2.png';
 exportgraphics(test_fig,filename_test) 
+
+histogram = plotHistograms(x1all, x2all, x3all, features);
 
 

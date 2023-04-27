@@ -94,17 +94,21 @@ for i = 1:classes
     index1 = 1 + trainingPerClass*(i-1);
     index2 = trainingPerClass*i;
     res = trainSet(index1:index2,:);
-    GMModels{i} = fitgmdist(res,2, 'CovarianceType', 'diagonal'); % store GMM object in cell array
+    GMModels{i} = fitgmdist(res,2, 'CovarianceType', 'diagonal','RegularizationValue', 0.01); % store GMM object in cell array
 end
 
 
 %% Classification
-predictedClasses = zeros(1, length(testSet));
+predictedClasses = zeros( length(testSet), 1);
 for C = 1:12
-    pdfVals = zeros(size(testset,1), GMModels{C}.NumComponents);
-    for i = 1:GMModels{C}.NumComponents
-        pdfVals(:, i) = mvnpdf(testset, GMModels{C}.mu(i, :), GMModels{C}.Sigma(:, :, i));
+    classGMM = GMModels{C};
+    pdfVals = zeros(size(testSet,1), classGMM.NumComponents);
+    for i = 1:classGMM.NumComponents
+        pdfValues = pdfVals(1+testPerClass*(C-1):testPerClass*C, i);
+        temptest = mvnpdf(testSet, classGMM.mu(i, :), classGMM.Sigma(:, :, i));
+        pdfVals(:, i) = mvnpdf(testSet, GMModels{C}.mu(i, :), GMModels{C}.Sigma(:, :, i));
     end
+    m = max(pdfVals, [], 2)
     [~, predictedClasses(1+testPerClass*(C-1):testPerClass*C)] = max(pdfVals, [], 2);
 end
 
