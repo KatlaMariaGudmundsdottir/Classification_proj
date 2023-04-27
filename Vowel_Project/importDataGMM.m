@@ -52,55 +52,112 @@ vowdatanohead = table(dataArray{1:end-1}, 'VariableNames', {'identifier','durati
 
 %% Clear temporary variables
 clearvars filename formatSpec fileID dataArray ans;
+
+%% Classification variables
 classes = 12;
 features = 15;
 dataPerClass = 139;
-trainingPerClass = 30;
+trainingPerClass = 70;
 testPerClass = dataPerClass-trainingPerClass;
+
+numMen = 45; trainNumMen = 22; testNumMen = 23;
+numWomen = 48; trainNumWomen = 24; testNumWomen = 24;
+numBoys = 27; trainNumBoys = 14; testNumBoys = 13;
+numGirls = 19; trainNumGirls = 10; testNumGirls = 9;
 
 testSet = zeros(testPerClass*classes,features);
 testLabels = zeros(1,testPerClass*classes);
-trainingSet = zeros(trainingPerClass*classes,features);
-trainingLabels = zeros(1,trainingPerClass*classes);
-for i = 1:classes
-    index1 = trainingPerClass+dataPerClass*(i-1)+1;
-    index2 = dataPerClass*i;
-    tempTest = vowdatanohead(index1:index2,2:16);
-    testSet(1+testPerClass*(i-1):testPerClass*i, 1:features) = table2array(tempTest);
-    testLabels(1+testPerClass*(i-1):testPerClass*i) = i.*ones(testPerClass, 1);
+trainSet = zeros(trainingPerClass*classes,features);
+trainLabels = zeros(1,trainingPerClass*classes);
 
-    index1 = 1+dataPerClass*(i-1);
-    index2 = trainingPerClass + dataPerClass*(i-1);
-    tempTraining = vowdatanohead(index1:index2,2:16);
-    trainingSet(1+trainingPerClass*(i-1):trainingPerClass*i, 1:features) = table2array(tempTraining);
-    trainingLabels(1+trainingPerClass*(i-1):trainingPerClass*i) = i.*ones(trainingPerClass, 1);
+
+%% Seperating training and test data
+% Restructuring data into a 4-dimensional array
+data = table2array(vowdatanohead(:, 2:16));
+data = reshape(data, [dataPerClass, classes, features]);
+
+% Indexes for splitting data
+trainWomenIndex1 = numMen+1;
+trainBoysIndex1 = trainWomenIndex1 + numWomen;
+trainGirlsIndex1 = trainBoysIndex1 + numBoys;
+
+trainMenIndex2 = trainNumMen;
+trainWomenIndex2 = trainWomenIndex1 + trainNumWomen-1;
+trainBoysIndex2 = trainBoysIndex1 + trainNumBoys-1;
+trainGirlsIndex2 = trainGirlsIndex1 + trainNumGirls-1;
+
+testMenIndex1 = trainMenIndex2+1;
+testWomenIndex1 = trainWomenIndex2+1; 
+testBoysIndex1 = trainBoysIndex2 +1;
+testGirlsIndex1 = trainGirlsIndex2 + 1;
+
+testMenIndex2 = numMen;
+testWomenIndex2 = testWomenIndex1 + testNumWomen-1;
+testBoysIndex2 = testBoysIndex1 + testNumBoys-1;
+testGirlsIndex2 = testGirlsIndex1 + testNumGirls-1;
+
+for i = 1:classes
+    % Training data
+    menTrainData = reshape(data(1:trainMenIndex2, i, :), [trainNumMen, features]);
+    womenTrainData = reshape(data(trainWomenIndex1:trainWomenIndex2, i, :), [trainNumWomen, features]);
+    boysTrainData = reshape(data(trainBoysIndex1:trainBoysIndex2, i, :), [trainNumBoys, features]);
+    girlsTrainData = reshape(data(trainGirlsIndex1:trainGirlsIndex2, i, :), [trainNumGirls, features]);
+    temptest = [menTrainData; womenTrainData; boysTrainData; girlsTrainData];
+    temptest2 = trainSet(1+trainingPerClass*(i-1):trainingPerClass*i, :);
+    trainSet(1+trainingPerClass*(i-1):trainingPerClass*i, :) = [menTrainData; womenTrainData; boysTrainData; girlsTrainData];
+    trainLabels(1+trainingPerClass*(i-1):trainingPerClass*i) = i.*ones(trainingPerClass, 1);
+    
+    % Testing data
+    menTestData = reshape(data(testMenIndex1:testMenIndex2, i, :), [testNumMen, features]);
+    womenTestData = reshape(data(testWomenIndex1:testWomenIndex2, i, :), [testNumWomen, features]);
+    boysTestData = reshape(data(testBoysIndex1:testBoysIndex2, i, :), [testNumBoys, features]);
+    girlsTestData = reshape(data(testGirlsIndex1:testGirlsIndex2, i, :), [testNumGirls, features]);
+    testSet(1+testPerClass*(i-1):testPerClass*i, :) = [menTestData; womenTestData; boysTestData; girlsTestData];
+    testLabels(1+testPerClass*(i-1):testPerClass*i) = i.*ones(testPerClass, 1);
 end 
 
-
+%% training
 GMModels = cell(1,classes); % initialize cell array
 for i = 1:classes
     index1 = 1 + trainingPerClass*(i-1);
     index2 = trainingPerClass*i;
-    res = trainingSet(index1:index2,:);
-    GMModels{i} = fitgmdist(res,2); % store GMM object in cell array
+    res = trainSet(index1:index2,:);
+%     res(res==0) = NaN;
+    options = statset('MaxIter',1000);
+    GMModels{i} = fitgmdist(res,3, 'RegularizationValue', 1e-10,'CovarianceType','diagonal','Options',options); % store GMM object in cell array
 end
 
-
-
-predictedClasses = zeros(1, length(testSet));
-for k =  1:length(testSet)
-    xk = testSet(k,:);
+%% classification MLR 
+predictedClasses = zeros(1, length(trainSet));
+for k =  1:length(trainSet)
+    xk = trainSet(k,:);
     pdf_k = zeros(1,classes);
     for C = 1:classes 
-        pdf_k(C) = mvnpdf(xk,GMModels{C}.mu,GMModels{C}.Sigma) ;
+        temp = mvnpdf(xk,GMModels{C}.mu,GMModels{C}.Sigma)
+        [pdf_k(C),~] = max(temp);
     end
     [~, predictedClasses(k)] = max(pdf_k);
 end
 
-%% Plotting Confusion Matrix
-confmat = confusionmat(testLabels, predictedClasses);
-plotConfusionMatrix(confmat, 'Confusion Matrix for traing set')
+%% classification MAP
+% predictedClassesMAP = zeros(1, length(testSet));
+% for k = 1:length(testSet)
+%     xk = testSet(k,:);
+%     posterior_k = zeros(1,classes);
+%     for C = 1:classes
+%         [~, posterior_k(C)] = posterior(GMModels{C}, xk);
+%     end
+%     [~, predictedClassesMAP(k)] = max(posterior_k);
+% end
 
+
+%% Plotting Confusion Matrix
+confmat = confusionmat(trainLabels, predictedClasses);
+errorRate = calculateErrorRate(confmat,trainingPerClass);
+fig = plotConfusionMatrixGPT(confmat, 'Confusion Matrix for traing set MAP', errorRate)
+
+% filename = 'confusion_matrix_test.png';
+% saveas(fig, filename);
 
 
 %% Utility functions
@@ -126,5 +183,4 @@ eig_vals = eig(A);
 is_pos_def = all(eig_vals > 0);
 end
 
-% mvnpdf(138,2:16, )
 

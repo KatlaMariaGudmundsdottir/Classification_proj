@@ -78,7 +78,6 @@ for i = 1:classes
     trainSet(1+trainingPerClass*(i-1):trainingPerClass*i, :) = [menTrainData; womenTrainData; boysTrainData; girlsTrainData];
     trainLabels(1+trainingPerClass*(i-1):trainingPerClass*i) = i.*ones(trainingPerClass, 1);
     
-    
     % Testing data
     menTestData = reshape(data(testMenIndex1:testMenIndex2, i, :), [testNumMen, features]);
     womenTestData = reshape(data(testWomenIndex1:testWomenIndex2, i, :), [testNumWomen, features]);
@@ -114,17 +113,9 @@ for k =  1:length(trainSet)
     [~, predictedClasses(k)] = max(pdf_k);
 end
 
-%% Plotting Confusion Matrix
-confmat = confusionmat(trainLabels, predictedClasses);
-plotConfusionMatrix(confmat, 'Confusion Matrix for trainig set')
-
-
-%% Calculating error rate
-incorrectPred = 0;
-for i = 1:classes
-    incorrectPred = incorrectPred + (testPerClass - confmat(i, i));
-end
-errorRate = incorrectPred/(testPerClass*classes)
+confmat = confusionmat(testLabels, predictedClasses);
+errorRate = calculateErrorRate(confmat,testPerClass);
+plotConfusionMatrix(confmat, 'Confusion Matrix for test set', errorRate)
 
 
 

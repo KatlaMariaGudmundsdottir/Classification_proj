@@ -31,12 +31,22 @@ C = 3;
 [Ntot,dimx] = size(xtraining);
  
 alpha = 0.005;
-iterations = 500000;
+iterations = 10000;
  
 [W,MSE] = trainingLinearClassifier(xtraining,tktraining, alpha, iterations); 
 [g_training,confmat_training] = linearClassifier(xtraining, tktraining, W);
 [g_test,confmat_test] = linearClassifier(xtest, tktest, W);
 
-plotConfusionMatrix(confmat_test, 'Confusion Matrix test set');
-plotConfusionMatrix(confmat_training, 'Confusion Matrix training set');
+
+errorRateTrainingSet = calculateErrorRate(confmat_training, length(traininSet));
+training_fig = plotConfusionMatrixGPT(confmat_training, 'Confusion Matrix Test Set', errorRateTrainingSet);
+filename_training = 'confmat_test_2.png';
+exportgraphics(training_fig,filename_training) 
+
+
+errorRateTestSet = calculateErrorRate(confmat_test, length(testSet));
+test_fig = plotConfusionMatrix(confmat_test, 'Confusion Matrix Training Set');
+filename_test = 'confmat_training_2.png';
+exportgraphics(test_fig,filename_test) 
+
 

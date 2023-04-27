@@ -3,7 +3,7 @@ function [W,MSE] = trainingLinearClassifier(trainingSet, t, alpha, max_iteration
     [C,~] = size(t);
     W = ones(C,dimx+1);
     N = 500000;
-    tol = 1e-7;
+    tol = 1e-10;
 
     if nargin == 5
         W = initalValue;

@@ -24,8 +24,13 @@ function fig = plotConfusionMatrix(C, titleString, errorRate)
     yticks(1:size(C,2)); % Set the y ticks to show whole numbers
     set(gca,'FontSize',14); % Increase font size of the axes labels
 
-    % Add error rate text label
+    %saveas(gcf, 'confusion_matrix.png'); can perhaps use gcf to return
+    %matrix if I want to plot 2 side by side
+    %also add MSE, error_rate to plot?
+      % Add error rate text label
     [numRows, numCols] = size(C);
     errorRateStr = sprintf('Error rate: %.2f%%', errorRate*100);
-    text(numCols/2, numRows+2, errorRateStr,'clipping', 'off', 'HorizontalAlignment', 'center', 'FontSize', 14);
+    text(numCols/2, numRows+1, errorRateStr, 'HorizontalAlignment', 'center', 'FontSize', 14);
 end
+
+
