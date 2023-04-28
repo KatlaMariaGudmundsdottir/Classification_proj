@@ -36,6 +36,7 @@ function [W,MSE] = trainingLinearClassifier(trainingSet, t, alpha, max_iteration
         diff = abs(MSE - MSE_prev);
         MSE_prev = MSE;
         iterate = diff > tol && n <= N;
+        disp(MSE)
     end
     diff
     MSE

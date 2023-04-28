@@ -1,4 +1,4 @@
-function errorRate = calculateErrorRate(confusionMatrix,testPerClass)
+    function errorRate = calculateErrorRate(confusionMatrix,testPerClass)
     C = length(confusionMatrix);
     incorrectPred = 0;
     for i = 1:C
