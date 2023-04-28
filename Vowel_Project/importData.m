@@ -42,7 +42,8 @@ testSet = zeros(testPerClass*classes,features);
 testLabels = zeros(1,testPerClass*classes);
 trainSet = zeros(trainingPerClass*classes,features);
 trainLabels = zeros(1,trainingPerClass*classes);
-
+noSplitTrainSet = zeros(trainingPerClass*classes,features); % training set with no splitting of data for comparison
+noSplitTestSet = zeros(testPerClass*classes,features);
 
 %% Seperating training and test data
 % Restructuring data into a 4-dimensional array
@@ -87,25 +88,32 @@ for i = 1:classes
     testLabels(1+testPerClass*(i-1):testPerClass*i) = i.*ones(testPerClass, 1);
 end 
 
+for i = 1:classes
+    noSplitTrainSet(1+trainingPerClass*(i-1):trainingPerClass*i, :) = data(1:trainingPerClass, i, :);
+    noSplittTestSet(1+testPerClass*(i-1):testPerClass*i, :) = data(trainingPerClass+1:139, i, :);
+end
+
 
 %% Training
 covdef = zeros(12,1);
 columnMeans = zeros(classes,features);
 covMatrcies = zeros(classes*features,features);
+diagCovMatrices = zeros(classes*features,features);
 for i = 1:classes
     index1 = 1+trainingPerClass*(i-1);
     index2 = trainingPerClass*(i);
     res = trainSet(index1:index2,:);
     columnMeans(i,:) = mean(res,1);
     tempCovMatrix = cov(res);
+    tempDiagCovMatrix = diag(diag(tempCovMatrix));
     covMatrcies(1+features*(i-1):features*i,:) = tempCovMatrix;
-    covdef(i) = isPositiveDefinite(tempCovMatrix);
+    diagCovMatrixes(1+features*(i-1):features*i,:) = tempDiagCovMatrix;
 end
 
 %% Classification
-predictedClasses = zeros(1, length(trainSet));
-for k =  1:length(trainSet)
-    xk = trainSet(k,:);
+predictedClasses = zeros(1, length(testSet));
+for k =  1:length(testSet)
+    xk = testSet(k,:);
     pdf_k = zeros(1,classes);
     for C = 1:classes 
         pdf_k(C) = mvnpdf(xk,columnMeans(C,:), covMatrcies(1+features*(C-1):features*C,:));
@@ -115,32 +123,6 @@ end
 
 confmat = confusionmat(testLabels, predictedClasses);
 errorRate = calculateErrorRate(confmat,testPerClass);
-plotConfusionMatrix(confmat, 'Confusion Matrix for test set', errorRate)
+plotConfusionMatrixGPT(confmat, 'Confusion Matrix for Test Set w. Full Covariance', errorRate)
 
-
-
-%% Utility functions
-function is_pos_def = isPositiveDefinite(A)
-% This function checks if a matrix A is positive definite
-% Inputs: A - matrix to check
-% Outputs: is_pos_def - true if A is positive definite, false otherwise
-
-% Check if A is square
-if size(A,1) ~= size(A,2)
-    error('Input matrix A must be square.');
-end
-
-% Check if A is symmetric
-if ~isequal(A,A')
-    error('Input matrix A must be symmetric.');
-end
-
-% Compute the eigenvalues of A
-eig_vals = eig(A);
-
-% Check if all eigenvalues are positive
-is_pos_def = all(eig_vals > 0);
-end
-
-% mvnpdf(138,2:16, )
 

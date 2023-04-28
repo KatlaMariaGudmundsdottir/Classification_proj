@@ -7,14 +7,17 @@ filename = fullfile(currentFolder, 'vowdata_nohead.dat');
 % Format for each line of text:
 formatSpec = '%5s%4f%4f%5f%5f%5f%5f%5f%5f%5f%5f%5f%5f%5f%5f%5f%[^\n\r]';
 
+% Open the text file.
 fileID = fopen(filename,'r');
 
 % Read columns of data according to the format.
+% This call is based on the structure of the file used to generate this code. If an error occurs for a different file, try regenerating the code from the Import Tool.
 dataArray = textscan(fileID, formatSpec, 'Delimiter', '', 'WhiteSpace', '', 'TextType', 'string',  'ReturnOnError', false);
 
 % Remove white space around all cell columns.
 dataArray{1} = strtrim(dataArray{1});
 
+% Close the text file.
 fclose(fileID);
 
 % Create output variable
@@ -22,7 +25,6 @@ vowdatanohead = table(dataArray{1:end-1}, 'VariableNames', {'identifier','durati
 
 % Clear temporary variables
 clearvars filename formatSpec fileID dataArray ans;
-
 
 %% Classification variables
 classes = 12;
@@ -40,7 +42,8 @@ testSet = zeros(testPerClass*classes,features);
 testLabels = zeros(1,testPerClass*classes);
 trainSet = zeros(trainingPerClass*classes,features);
 trainLabels = zeros(1,trainingPerClass*classes);
-
+noSplitTrainSet = zeros(trainingPerClass*classes,features); % training set with no splitting of data for comparison
+noSplitTestSet = zeros(testPerClass*classes,features);
 
 %% Seperating training and test data
 % Restructuring data into a 4-dimensional array
@@ -67,7 +70,6 @@ testWomenIndex2 = testWomenIndex1 + testNumWomen-1;
 testBoysIndex2 = testBoysIndex1 + testNumBoys-1;
 testGirlsIndex2 = testGirlsIndex1 + testNumGirls-1;
 
-% loop for making test and train array
 for i = 1:classes
     % Training data
     menTrainData = reshape(data(1:trainMenIndex2, i, :), [trainNumMen, features]);
@@ -76,7 +78,6 @@ for i = 1:classes
     girlsTrainData = reshape(data(trainGirlsIndex1:trainGirlsIndex2, i, :), [trainNumGirls, features]);
     trainSet(1+trainingPerClass*(i-1):trainingPerClass*i, :) = [menTrainData; womenTrainData; boysTrainData; girlsTrainData];
     trainLabels(1+trainingPerClass*(i-1):trainingPerClass*i) = i.*ones(trainingPerClass, 1);
-    
     
     % Testing data
     menTestData = reshape(data(testMenIndex1:testMenIndex2, i, :), [testNumMen, features]);
@@ -87,67 +88,41 @@ for i = 1:classes
     testLabels(1+testPerClass*(i-1):testPerClass*i) = i.*ones(testPerClass, 1);
 end 
 
-
-%% GMM Training
-GMModels = cell(1,classes); % initialize cell array
 for i = 1:classes
-    index1 = 1 + trainingPerClass*(i-1);
-    index2 = trainingPerClass*i;
-    res = trainSet(index1:index2,:);
-    GMModels{i} = fitgmdist(res,2, 'CovarianceType', 'diagonal','RegularizationValue', 0.01); % store GMM object in cell array
+    noSplitTrainSet(1+trainingPerClass*(i-1):trainingPerClass*i, :) = data(1:trainingPerClass, i, :);
+    noSplittTestSet(1+testPerClass*(i-1):testPerClass*i, :) = data(trainingPerClass+1:139, i, :);
 end
 
+
+%% Training
+covdef = zeros(12,1);
+columnMeans = zeros(classes,features);
+covMatrcies = zeros(classes*features,features);
+diagCovMatrices = zeros(classes*features,features);
+for i = 1:classes
+    index1 = 1+trainingPerClass*(i-1);
+    index2 = trainingPerClass*(i);
+    res = trainSet(index1:index2,:);
+    columnMeans(i,:) = mean(res,1);
+    tempCovMatrix = cov(res);
+    tempDiagCovMatrix = diag(diag(tempCovMatrix));
+    covMatrcies(1+features*(i-1):features*i,:) = tempCovMatrix;
+    diagCovMatrixes(1+features*(i-1):features*i,:) = tempDiagCovMatrix;
+end
 
 %% Classification
-predictedClasses = zeros( length(testSet), 1);
-for C = 1:12
-    classGMM = GMModels{C};
-    pdfVals = zeros(size(testSet,1), classGMM.NumComponents);
-    for i = 1:classGMM.NumComponents
-        pdfValues = pdfVals(1+testPerClass*(C-1):testPerClass*C, i);
-        temptest = mvnpdf(testSet, classGMM.mu(i, :), classGMM.Sigma(:, :, i));
-        pdfVals(:, i) = mvnpdf(testSet, GMModels{C}.mu(i, :), GMModels{C}.Sigma(:, :, i));
+predictedClasses = zeros(1, length(trainSet));
+for k =  1:length(trainSet)
+    xk = tesSet(k,:);
+    pdf_k = zeros(1,classes);
+    for C = 1:classes 
+        pdf_k(C) = mvnpdf(xk,columnMeans(C,:), diagCovMatrixes(1+features*(C-1):features*C,:));
     end
-    m = max(pdfVals, [], 2)
-    [~, predictedClasses(1+testPerClass*(C-1):testPerClass*C)] = max(pdfVals, [], 2);
+    [~, predictedClasses(k)] = max(pdf_k);
 end
 
-
-%% Plotting Confusion Matrix
-confmat = confusionmat(trainLabels, predictedClasses);
-plotConfusionMatrixGPT(confmat, 'Confusion Matrix for trainig set')
-
-
-%% Calculating error rate
-incorrectPred = 0;
-for i = 1:classes
-    incorrectPred = incorrectPred + (testPerClass - confmat(i, i));
-end
-errorRate = incorrectPred/(testPerClass*classes)
+confmat = confusionmat(testLabels, predictedClasses);
+errorRate = calculateErrorRate(confmat,testPerClass);
+plotConfusionMatrixGPT(confmat, 'Single Gaussian Confusion Matrix w. Diagonal Covariance', errorRate)
 
 
-
-%% Utility functions
-function is_pos_def = isPositiveDefinite(A)
-% This function checks if a matrix A is positive definite
-% Inputs: A - matrix to check
-% Outputs: is_pos_def - true if A is positive definite, false otherwise
-
-% Check if A is square
-if size(A,1) ~= size(A,2)
-    error('Input matrix A must be square.');
-end
-
-% Check if A is symmetric
-if ~isequal(A,A')
-    error('Input matrix A must be symmetric.');
-end
-
-% Compute the eigenvalues of A
-eig_vals = eig(A);
-
-% Check if all eigenvalues are positive
-is_pos_def = all(eig_vals > 0);
-end
-
-% mvnpdf(138,2:16, )
