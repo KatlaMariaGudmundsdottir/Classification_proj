@@ -123,21 +123,36 @@ for i = 1:classes
     index2 = trainingPerClass*i;
     res = trainSet(index1:index2,:);
 %     res(res==0) = NaN;
-    options = statset('MaxIter',1000);
-    GMModels{i} = fitgmdist(res,3, 'RegularizationValue', 1e-10,'CovarianceType','diagonal','Options',options); % store GMM object in cell array
+    options = statset('MaxIter',1000, 'TolFun', 1e-10);
+    GMModels{i} = fitgmdist(res,2, 'RegularizationValue', 1e-12,'CovarianceType','diagonal','Options',options); % store GMM object in cell array
 end
 
-%% classification MLR 
-predictedClasses = zeros(1, length(trainSet));
-for k =  1:length(trainSet)
-    xk = trainSet(k,:);
+%% classification MLR NEW
+predictedClasses = zeros(1, length(testSet));
+for k =  1:length(testSet)
+    xk = testSet(k,:);
     pdf_k = zeros(1,classes);
     for C = 1:classes 
-        temp = mvnpdf(xk,GMModels{C}.mu,GMModels{C}.Sigma)
-        [pdf_k(C),~] = max(temp);
+%         pdf_temp = mvnpdf(xk,GMModels{C}.mu,GMModels{C}.Sigma);
+        for i = 1:GMModels{i}.NumComponents
+%             pdf_k(C) = pdf_k(C) +  pdf_temp(i)*GMModels{C}.ComponentProportion(i);
+            pdf_k(C) = pdf_k(C) + GMModels{C}.ComponentProportion(i)*mvnpdf(xk, GMModels{C}.mu(i,:), GMModels{C}.Sigma(:,:,i));
+        end
     end
     [~, predictedClasses(k)] = max(pdf_k);
 end
+
+%% classification MLR Old
+% predictedClasses = zeros(1, length(testSet));
+% for k =  1:length(testSet)
+%     xk = testSet(k,:);
+%     pdf_k = zeros(1,classes);
+%     for C = 1:classes 
+%         temp = mvnpdf(xk,GMModels{C}.mu,GMModels{C}.Sigma)
+%         [pdf_k(C),~] = max(temp);
+%     end
+%     [~, predictedClasses(k)] = max(pdf_k);
+% end
 
 %% classification MAP
 % predictedClassesMAP = zeros(1, length(testSet));
@@ -152,8 +167,8 @@ end
 
 
 %% Plotting Confusion Matrix
-confmat = confusionmat(trainLabels, predictedClasses);
-errorRate = calculateErrorRate(confmat,trainingPerClass);
+confmat = confusionmat(testLabels, predictedClasses);
+errorRate = calculateErrorRate(confmat,testPerClass);
 fig = plotConfusionMatrixGPT(confmat, 'Confusion Matrix for traing set MAP', errorRate)
 
 % filename = 'confusion_matrix_test.png';
