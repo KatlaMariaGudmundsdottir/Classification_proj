@@ -12,9 +12,9 @@ features = ["l.sepals", "w.sepals", "l.petals", "w.petals"];
 % x2 = x2all;   
 % x3 = x3all;
 
-x1 = [x1all(:,1) x1all(:,3) x1all(:,4)];
-x2 = [x2all(:,1) x2all(:,3) x2all(:,4)];
-x3 = [x3all(:,1) x3all(:,3) x3all(:,4)];
+x1 = [x1all(:,2) x1all(:,3) x1all(:,4)];
+x2 = [x2all(:,2) x2all(:,3) x2all(:,4)];
+x3 = [x3all(:,2) x3all(:,3) x3all(:,4)];
 
 % x1 = [x1all(:,3) x1all(:,4)];
 % x2 = [x2all(:,3) x2all(:,4)];
