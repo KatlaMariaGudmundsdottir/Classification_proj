@@ -12,17 +12,17 @@ features = ["l.sepals", "w.sepals", "l.petals", "w.petals"];
 % x2 = x2all;   
 % x3 = x3all;
 
-x1 = [x1all(:,2) x1all(:,3) x1all(:,4)];
-x2 = [x2all(:,2) x2all(:,3) x2all(:,4)];
-x3 = [x3all(:,2) x3all(:,3) x3all(:,4)];
+% x1 = [x1all(:,1) x1all(:,3) x1all(:,4)];
+% x2 = [x2all(:,1) x2all(:,3) x2all(:,4)];
+% x3 = [x3all(:,1) x3all(:,3) x3all(:,4)];
 
 % x1 = [x1all(:,3) x1all(:,4)];
 % x2 = [x2all(:,3) x2all(:,4)];
 % x3 = [x3all(:,3) x3all(:,4)];
-
-% x1 = [x1all(:,3)];
-% x2 = [x2all(:,3)];
-% x3 = [x3all(:,3)];
+    
+x1 = [x1all(:,4)];
+x2 = [x2all(:,4)];
+x3 = [x3all(:,4)];
 
 x1training = [x1(traininSet,:)];
 x1test = [x1(testSet,:)];
@@ -46,9 +46,11 @@ C = 3;
 [Ntot,dimx] = size(xtraining);
  
 alpha = 0.005;
-iterations = 100000;
- 
+iterations = 500000;
+
+tic
 [W,MSE] = trainingLinearClassifier(xtraining,tktraining, alpha, iterations); 
+toc
 [g_training,confmat_training] = linearClassifier(xtraining, tktraining, W);
 [g_test,confmat_test] = linearClassifier(xtest, tktest, W);
 
@@ -62,8 +64,7 @@ exportgraphics(training_fig,filename_training)
 errorRateTestSet = calculateErrorRate(confmat_test, length(testSet));
 test_fig = plotConfusionMatrixGPT(confmat_test, 'Confusion Matrix Test Set, removed 3 features',errorRateTestSet);
 filename_test = 'confmat_test_removed3.png';
-exportgraphics(test_fig,filename_test) 
+exportgraphics(test_fig,filename_test)
 
 % histogram = plotHistograms(x1all, x2all, x3all, features);
 % exportgraphics(histogram,'histogram.png') 
-
