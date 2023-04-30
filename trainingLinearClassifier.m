@@ -1,4 +1,4 @@
-function [W,MSE] = trainingLinearClassifier(trainingSet, t, alpha, max_iterations, initalValue)
+function [W,MSE_vec] = trainingLinearClassifier(trainingSet, t, alpha, max_iterations, initalValue)
     [Ntot,dimx] = size(trainingSet);    
     [C,~] = size(t);
     W = ones(C,dimx+1);
@@ -17,6 +17,7 @@ function [W,MSE] = trainingLinearClassifier(trainingSet, t, alpha, max_iteration
     n = 1;
     MSE_prev = inf;
     iterate = true;
+    MSE_vec = zeros(N,1); % initialize vector to store MSE values
     while iterate
         MSE_dW = zeros(size(W));
         MSE = 0;
@@ -32,14 +33,15 @@ function [W,MSE] = trainingLinearClassifier(trainingSet, t, alpha, max_iteration
             MSE = MSE + 1/2*((gk-tk)')*(gk-tk);
         end 
         W = W - alpha*MSE_dW;
+        MSE_vec(n) = MSE; % store current MSE value in vector
         n = n+1;
         diff = abs(MSE - MSE_prev);
         MSE_prev = MSE;
         iterate = diff > tol && n <= N;
-        disp(MSE)
+%         disp(MSE)
     end
-    diff
-    MSE
-    n
+%     diff
+%     MSE
+%     n
 end
 

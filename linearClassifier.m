@@ -8,7 +8,9 @@ function [g, confmat] = linearClassifier(x,t,W)
     for i = 1:Ntot 
         res(1,i) = find(g(:,i)==max(g(:,i)));
         trueClass(1,i) = find(t(:,i)==max(t(:,i)));
+        if res(1,i) ~= trueClass(1,i)
+            disp(i)
+        end
     end
     confmat = confusionmat(trueClass,res);
 end
-
