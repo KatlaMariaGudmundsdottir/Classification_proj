@@ -48,23 +48,15 @@ C = 3;
 alpha = 0.005;
 iterations = 10000;
 
-tic
 [W,MSE] = trainingLinearClassifier(xtraining,tktraining, alpha, iterations); 
-toc
 [g_training,confmat_training] = linearClassifier(xtraining, tktraining, W);
 [g_test,confmat_test] = linearClassifier(xtest, tktest, W);
 
 
 errorRateTrainingSet = calculateErrorRate(confmat_training, length(traininSet));
-training_fig = plotConfusionMatrixGPT(confmat_training, 'Confusion Matrix Training Set, removed 3 features', errorRateTrainingSet);
-filename_training = 'confmat_training_removed3.png';
-exportgraphics(training_fig,filename_training) 
-
+training_fig = plotConfusionMatrix(confmat_training, 'Confusion Matrix Training Set', errorRateTrainingSet);
 
 errorRateTestSet = calculateErrorRate(confmat_test, length(testSet));
-test_fig = plotConfusionMatrixGPT(confmat_test, 'Confusion Matrix Test Set, removed 3 features',errorRateTestSet);
-filename_test = 'confmat_test_removed3.png';
-exportgraphics(test_fig,filename_test)
+test_fig = plotConfusionMatrix(confmat_test, 'Confusion Matrix Test Set',errorRateTestSet);
 
-% histogram = plotHistograms(x1all, x2all, x3all, features);
-% exportgraphics(histogram,'histogram.png') 
+histogram = plotHistograms(x1all, x2all, x3all, features);

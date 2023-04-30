@@ -10,9 +10,7 @@ function [W,MSE_vec] = trainingLinearClassifier(trainingSet, t, alpha, max_itera
     elseif nargin == 4
         N = max_iterations;
     end
-%     imagesPerClass = Ntot/C;
-%     tk = eye(C);
-%     tkAll = 
+
     n = 1;
     MSE_prev = inf;
     iterate = true;
@@ -37,10 +35,6 @@ function [W,MSE_vec] = trainingLinearClassifier(trainingSet, t, alpha, max_itera
         diff = abs(MSE - MSE_prev);
         MSE_prev = MSE;
         iterate = diff > tol && n <= N;
-%         disp(MSE)
     end
-%     diff
-    MSE
-%     n
 end
 
